@@ -88,9 +88,6 @@
 </div>
 
 <script>
-/* =========================
-   UTIL
-   ========================= */
 const Util = (() => {
   let seed = Date.now()%1000000;
   function setSeed(s){ seed=s; }
@@ -101,9 +98,6 @@ const Util = (() => {
   return { setSeed, rand, clamp, now, fmt };
 })();
 
-/* =========================
-   GAME
-   ========================= */
 (() => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -113,7 +107,6 @@ const Util = (() => {
   const bgMusic = document.getElementById('bgMusic');
   bgMusic.volume = 0.4;
 
-  // HUD
   const hud = {
     score: document.getElementById('score'),
     streak: document.getElementById('streak'),
@@ -128,7 +121,6 @@ const Util = (() => {
     emoji: document.getElementById('emoji'),
   };
 
-  // UI
   const ui = {
     play: document.getElementById('play'),
     daily: document.getElementById('daily'),
@@ -137,7 +129,12 @@ const Util = (() => {
     btnMute: document.getElementById('btnMute'),
   };
 
-  // State
   let running=false, t=0, dt=0, last=Util.now();
   let score=0, streak=0, peakStreak=0, speed=1, seedVal=Date.now()%1000000;
-  let lane=2, lanes=5, jumpCooldown=0
+  let lane=2, lanes=5, jumpCooldown=0;
+  let obstacles=[], orbs=[], particles=[], trail=[];
+  const laneY = i => 120 + i*((H-200)/lanes);
+
+  let toastTimer=0, emojiTimer=0;
+  function toast(msg){ hud.toast.textContent=msg; hud.toast.classList.add('show'); toastTimer=1.2; }
+  function emote(e){ hud.emoji.textContent=e; hud.emoji.style.opacity=1; emojiTimer=0.
