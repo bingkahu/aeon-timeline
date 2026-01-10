@@ -1,1 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>7D_GEOMETRY_KERNEL</title>
+    <style>
+        body { margin: 0; background: #000; color: #ff00ff; font-family: 'Courier New', monospace; overflow: hidden; }
+        canvas { display: block; filter: contrast(1.5) drop-shadow(0 0 5px #ff00ff); }
+        
+        #hud {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(10, 0, 15, 0.9);
+            border-left: 5px solid #ff00ff; padding: 20px;
+            pointer-events: none; z-index: 10;
+        }
 
+        .data { font-size: 12px; margin-bottom: 5px; text-transform: uppercase; }
+        .alert { color: #00f2ff; animation: blink 1s infinite; }
+        
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="hud">
+        <div class="data">OBJECT_CLASS: HEPTERACT (7-CUBE)</div>
+        <div class="data">VERTICES: 128 // EDGES: 448</div>
+        <div class="data">COORD_SYSTEM: [X,Y,Z,W,V,U,T]</div>
+        <div class="data">KERNEL_STATE: <span class="alert">STABLE_7D_PROJECTION</span></div>
+    </div>
+
+    <canvas id="kernel"></canvas>
+
+<script>
+/**
+ * 7D HEPTERACT SIMULATOR
+ * A recursive stereographic projection from 7-Dimensional space.
+ */
+
+const Engine7D = {
+    canvas: document.getElementById('kernel'),
+    ctx: null,
+    vertices: [],
+    angle: 0,
+
+    init() {
+        this.ctx = this.canvas.getContext('2d');
+        this.resize();
+        window.onresize = () => this.resize();
+
+        // Generate 7D Vertices (2^7 = 128 points)
+        for (let i = 0; i < 128; i++) {
+            let v = [];
+            for (let d = 0; d < 7; d++) {
+                v.push((i >> d) & 1 ? 1 : -1);
+            }
+            this.vertices.push(v);
+        }
+        
+        this.animate();
+    },
+
+    resize() {
+        this.W = this.canvas.width = window.innerWidth;
+        this.H = this.canvas.height = window.innerHeight;
+    },
+
+    rotate7D(v, a) {
+        let p = [...v];
+        
+        // Multi-planar rotations (7D has many rotation planes)
+        const planes = [[0, 6], [1, 5], [2, 4], [3, 0]];
+        planes.forEach(([d1, d2], idx) => {
+            let speed = a * (1 + idx * 0.2);
+            let cos = Math.cos(speed);
+            let sin = Math.sin(speed);
+            let a_val = p[d1] * cos - p[d2] * sin;
+            let b_val = p[d1] * sin + p[d2] * cos;
+            p[d1] = a_val;
+            p[d2] = b_val;
+        });
+        
+        return p;
+    },
+
+    project(v) {
+        let p = [...v];
+        
+        // Recursive Projection: 7D -> 6D -> 5D -> 4D -> 3D
+        for (let d = 6; d >= 3; d--) {
+            let factor = 1 / (3.5 - p[d]);
+            for (let i = 0; i < d; i++) {
+                p[i] *= factor;
+            }
+        }
+
+        // 3D -> 2D Screen Projection
+        let zoom = 800;
+        let d3 = 1 / (2.5 - p[2]);
+        return {
+            x: p[0] * d3 * zoom + this.W / 2,
+            y: p[1] * d3 * zoom + this.H / 2,
+            z: p[2]
+        };
+    },
+
+    animate() {
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, this.W, this.H);
+
+        const projected = this.vertices.map(v => this.project(this.rotate7D(v, this.angle)));
+
+        this.ctx.lineWidth = 0.5;
+        for (let i = 0; i < projected.length; i++) {
+            for (let j = i + 1; j < projected.length; j++) {
+                // Connect points with a Hamming Distance of 1 (adjacent in 7D)
+                let diff = 0;
+                let xor = i ^ j;
+                while (xor > 0) {
+                    if (xor & 1) diff++;
+                    xor >>= 1;
+                }
+
+                if (diff === 1) {
+                    let brightness = (projected[i].z + projected[j].z + 2) * 0.2;
+                    this.ctx.strokeStyle = `rgba(255, 0, 255, ${brightness})`;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(projected[i].x, projected[i].y);
+                    this.ctx.lineTo(projected[j].x, projected[j].y);
+                    this.ctx.stroke();
+                }
+            }
+        }
+
+        this.angle += 0.01;
+        requestAnimationFrame(() => this.animate());
+    }
+};
+
+window.onload = () => Engine7D.init();
+</script>
+</body>
+</html>
