@@ -21,7 +21,7 @@
 
 ## 🛠️ Tech Stack
 * **Language:** HTML5, CSS3 (Modern Flexbox/Grid), Vanilla JavaScript
-* **Hosting:** [Netlify](https://www.netlify.com/) for lightning-fast global delivery.
+* **Hosting:** [Cloudflare](https://www.cloudflare.com/) for lightning-fast global delivery.
 * **Analytics & SEO:** Google Search Console integrated.
 ------------
 Developed with ❤️ by bingkahu
